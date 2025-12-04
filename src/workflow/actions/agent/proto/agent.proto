@@ -7,7 +7,13 @@ import "google/protobuf/struct.proto";
 service AgentService {
   // Stream real-time interactive to the session.
   rpc Run(RunRequest) returns (stream AgentUpdate);
+
+  // Shut down an existing session.
+  rpc Shutdown(Empty) returns (Empty);
 }
+
+// Empty message.
+message Empty {}
 
 // Request to run an agent.
 message RunRequest {

@@ -117,20 +117,44 @@ impl Action for AgentAction {
 
         let mut agent_output: Option<pb::AgentOutput> = None;
 
-        while let Some(update) = stream.next().await {
-            let update = update.map_err(|e| ActflowError::Action(format!("Stream error: {}", e)))?;
+        // Get shutdown future for cancellation
+        let shutdown = ctx.wait_shutdown();
+        tokio::pin!(shutdown);
 
-            match update.relay_message {
-                Some(RelayMessage::Log(log_content)) => {
-                    // Forward log to workflow context
-                    ctx.emit_log(nid.clone(), log_content);
+        loop {
+            tokio::select! {
+                // Check for shutdown signal
+                _ = &mut shutdown => {
+                    // Context shutdown - shutdown agent service
+                    let _ = client.shutdown(pb::Empty {}).await;
+                    return Ok(ActionOutput::stopped());
                 }
-                Some(RelayMessage::Output(output)) => {
-                    // Store the final output
-                    agent_output = Some(output);
-                    break;
+                // Process next stream message
+                result = stream.next() => {
+                    match result {
+                        Some(Ok(update)) => {
+                            match update.relay_message {
+                                Some(RelayMessage::Log(log_content)) => {
+                                    // Forward log to workflow context
+                                    ctx.emit_log(nid.clone(), log_content);
+                                }
+                                Some(RelayMessage::Output(output)) => {
+                                    // Store the final output and break
+                                    agent_output = Some(output);
+                                    break;
+                                }
+                                None => {}
+                            }
+                        }
+                        Some(Err(e)) => {
+                            return Err(ActflowError::Action(format!("Stream error: {}", e)));
+                        }
+                        None => {
+                            // Stream ended without output
+                            break;
+                        }
+                    }
                 }
-                None => {}
             }
         }
 
