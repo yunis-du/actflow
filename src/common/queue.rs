@@ -1,10 +1,17 @@
+//! Message queues for inter-component communication.
+//!
+//! Provides both point-to-point (Queue) and broadcast (BroadcastQueue) messaging.
+
 use std::sync::Arc;
 
 use tokio::sync::broadcast;
 
 use crate::{ActflowError, Result};
 
-/// a bounded queue
+/// Bounded MPMC (multi-producer, multi-consumer) queue.
+///
+/// Used for command queues where messages should be consumed by exactly one receiver.
+/// Backed by flume for high-performance message passing.
 #[derive(Clone)]
 pub struct Queue<T> {
     receiver: Arc<flume::Receiver<T>>,
@@ -50,7 +57,10 @@ impl<T> Queue<T> {
     }
 }
 
-/// a broadcast queue
+/// Broadcast queue for one-to-many message distribution.
+///
+/// Used for event broadcasting where all subscribers receive every message.
+/// Backed by tokio's broadcast channel.
 #[derive(Clone)]
 pub struct BroadcastQueue<T> {
     sender: Arc<broadcast::Sender<T>>,

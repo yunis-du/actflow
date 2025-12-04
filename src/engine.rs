@@ -1,3 +1,11 @@
+//! Workflow engine - the main entry point for Actflow.
+//!
+//! The engine manages the lifecycle of workflows and processes, including:
+//! - Deploying workflow definitions
+//! - Creating and running process instances
+//! - Managing the event channel and storage
+//! - Graceful shutdown coordination
+
 mod monitor;
 
 use std::sync::{
@@ -18,22 +26,63 @@ use crate::{
 
 use monitor::Monitor;
 
+/// Maximum number of processes to cache in memory.
 const PROCESS_CACHE_SIZE: usize = 2048;
+/// Size of the queue for completed process notifications.
 const PROCESS_COMPLETE_QUEUE_SIZE: usize = 100;
 
+/// The main workflow engine.
+///
+/// Engine is the central coordinator for Actflow, responsible for:
+/// - Managing the tokio runtime for async execution
+/// - Coordinating the event channel for pub/sub messaging
+/// - Storing workflow definitions and process state
+/// - Creating and managing process instances
+///
+/// # Example
+///
+/// ```rust,ignore
+/// let config = Config::default();
+/// let engine = Engine::new_with_config(config);
+/// engine.launch();
+///
+/// // Deploy a workflow
+/// engine.deploy(&workflow_model)?;
+///
+/// // Create and run a process
+/// let process = engine.build_process("workflow_id")?;
+/// let pid = engine.run_process(process)?;
+///
+/// // Shutdown when done
+/// engine.shutdown();
+/// ```
 pub struct Engine {
+    /// Event channel for broadcasting workflow events.
     channel: Arc<Channel>,
+    /// Persistent storage for workflows and processes.
     store: Arc<Store>,
+    /// Background monitor for event persistence.
     monitor: Monitor,
+    /// Queue for receiving process completion notifications.
     procs_complete_queue: Arc<Queue<ProcessId>>,
+    /// In-memory cache of active processes.
     procs: Arc<MemCache<ProcessId, Arc<Process>>>,
 
+    /// Flag indicating if the engine is running.
     running: Arc<AtomicBool>,
+    /// Tokio runtime for async task execution.
     runtime: Arc<Runtime>,
+    /// Shutdown coordinator for graceful termination.
     shutdown: Arc<Shutdown>,
 }
 
 impl Engine {
+    /// Creates a new engine with the given configuration.
+    ///
+    /// This initializes:
+    /// - The tokio runtime with configured worker threads
+    /// - The storage backend (memory or PostgreSQL)
+    /// - The event channel and monitor
     pub fn new_with_config(confg: Config) -> Self {
         let runtime = Arc::new(Builder::new_multi_thread().worker_threads(confg.async_worker_thread_number.into()).enable_all().build().unwrap());
 
@@ -71,6 +120,12 @@ impl Engine {
         }
     }
 
+    /// Starts the engine and begins processing events.
+    ///
+    /// This method:
+    /// - Starts the event monitor for persistence
+    /// - Begins listening on the event channel
+    /// - Spawns a background task to clean up completed processes
     pub fn launch(&self) {
         if self.running.swap(true, Ordering::Relaxed) {
             return;
@@ -102,6 +157,12 @@ impl Engine {
         });
     }
 
+    /// Gracefully shuts down the engine.
+    ///
+    /// This method:
+    /// - Signals all components to stop
+    /// - Aborts all running processes
+    /// - Shuts down the event channel
     pub fn shutdown(&self) {
         if self.running.swap(false, Ordering::Relaxed) {
             return;
@@ -114,6 +175,9 @@ impl Engine {
         self.channel.shutdown();
     }
 
+    /// Deploys a workflow definition to the store.
+    ///
+    /// The workflow can then be instantiated as processes using `build_process`.
     pub fn deploy(
         &self,
         workflow: &WorkflowModel,
@@ -176,6 +240,7 @@ impl Engine {
         Ok(process_id)
     }
 
+    /// Stops a running process by its ID.
     pub fn stop(
         &self,
         process_id: &str,
@@ -189,6 +254,7 @@ impl Engine {
         }
     }
 
+    /// Gets a process by its ID from the cache.
     pub fn get_process(
         &self,
         process_id: &String,
@@ -196,6 +262,7 @@ impl Engine {
         self.procs.get(process_id)
     }
 
+    /// Returns a reference to the event channel.
     pub fn channel(&self) -> Arc<Channel> {
         self.channel.clone()
     }

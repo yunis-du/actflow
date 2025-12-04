@@ -1,3 +1,8 @@
+//! Workflow process management.
+//!
+//! A process represents a running instance of a workflow. It manages
+//! the execution lifecycle, including starting, aborting, and collecting outputs.
+
 use std::sync::Arc;
 
 use tokio::runtime::Runtime;
@@ -14,26 +19,60 @@ use crate::{
     workflow::Workflow,
 };
 
+/// Maximum number of commands that can be queued for a process.
 const COMMAND_QUEUE_SIZE: usize = 100;
 
+/// Unique identifier for a workflow process instance.
 pub type ProcessId = String;
 
+/// Commands that can be sent to control a workflow process.
 #[derive(Debug, Clone)]
 pub enum WorkflowCommand {
+    /// Start the workflow execution.
     Start,
+    /// Abort the workflow execution.
     Abort,
 }
 
+/// A running instance of a workflow.
+///
+/// Each process has a unique ID and maintains its own execution state.
+/// Multiple processes can run the same workflow definition concurrently.
+///
+/// # Lifecycle
+///
+/// 1. Create with `Process::new()`
+/// 2. Start execution with `process.start()`
+/// 3. Optionally abort with `process.abort()`
+/// 4. Check completion with `process.is_complete()`
+/// 5. Retrieve results with `process.get_outputs()`
 #[derive(Clone)]
 pub struct Process {
+    /// Unique process identifier.
     id: ProcessId,
+    /// Workflow ID this process is running.
     wid: String,
+    /// Dispatcher responsible for scheduling node execution.
     dispatcher: Arc<Dispatcher>,
+    /// Queue for receiving control commands.
     command_queue: Arc<Queue<WorkflowCommand>>,
+    /// Event channel for broadcasting process events.
     channel: Arc<Channel>,
 }
 
 impl Process {
+    /// Creates a new process instance from a workflow model.
+    ///
+    /// # Arguments
+    ///
+    /// * `model` - Workflow definition to execute
+    /// * `store` - Storage backend for persistence
+    /// * `channel` - Event channel for broadcasting events
+    /// * `runtime` - Tokio runtime for async execution
+    ///
+    /// # Returns
+    ///
+    /// Returns an `Arc<Process>` on success, or an error if creation fails.
     pub fn new(
         model: &WorkflowModel,
         store: Arc<Store>,
@@ -55,7 +94,7 @@ impl Process {
 
         let ctx = Arc::new(Context::new(pid.to_owned(), channel.clone()));
 
-        // set env variables
+        // Set environment variables from workflow model
         model.env.iter().for_each(|(k, v)| ctx.env().set(k.clone(), v.clone()));
 
         let dispatcher = Arc::new(Dispatcher::new(
@@ -74,14 +113,22 @@ impl Process {
         }))
     }
 
+    /// Returns the unique process identifier.
     pub fn id(&self) -> &str {
         &self.id
     }
 
+    /// Returns the workflow ID this process is running.
     pub fn wid(&self) -> &str {
         &self.wid
     }
 
+    /// Starts the workflow execution.
+    ///
+    /// This method:
+    /// 1. Starts the dispatcher
+    /// 2. Registers event handlers for completion/failure/abort
+    /// 3. Sends the start command to begin execution
     pub fn start(&self) {
         self.dispatcher.start();
 
@@ -104,14 +151,21 @@ impl Process {
         let _ = self.command_queue.send(WorkflowCommand::Start);
     }
 
+    /// Aborts the workflow execution.
+    ///
+    /// Sends an abort command to gracefully terminate the running workflow.
     pub fn abort(&self) {
         let _ = self.command_queue.send(WorkflowCommand::Abort);
     }
 
+    /// Returns the collected outputs from all executed nodes.
     pub fn get_outputs(&self) -> Vars {
         self.dispatcher.outputs()
     }
 
+    /// Checks if the workflow execution has completed.
+    ///
+    /// Returns `true` if the workflow has finished (success, failure, or abort).
     pub fn is_complete(&self) -> bool {
         self.dispatcher.is_complete()
     }

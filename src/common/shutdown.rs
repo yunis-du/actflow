@@ -1,3 +1,8 @@
+//! Graceful shutdown coordination.
+//!
+//! Provides a thread-safe mechanism for signaling and waiting on shutdown events.
+//! Used by Context and Channel to coordinate graceful termination.
+
 use std::{
     fmt::Debug,
     future::Future,
@@ -9,11 +14,31 @@ use std::{
 
 use tokio::sync::Notify;
 
-/// Thread-safe shutdown coordinator
+/// Thread-safe shutdown coordinator.
+///
+/// Provides a way to signal shutdown and wait for the signal asynchronously.
+/// Uses an atomic boolean for the flag and tokio's Notify for async waiting.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// let shutdown = Shutdown::new();
+///
+/// // In one task: wait for shutdown
+/// tokio::select! {
+///     _ = shutdown.wait() => {
+///         println!("Shutdown signaled");
+///     }
+///     _ = do_work() => {}
+/// }
+///
+/// // In another task: signal shutdown
+/// shutdown.shutdown();
+/// ```
 #[derive(Clone)]
 pub struct Shutdown {
-    /// Tuple of (shutdown flag, notification mechanism)
-    /// Both wrapped in Arc for thread-safe sharing
+    /// Tuple of (shutdown flag, notification mechanism).
+    /// Both wrapped in Arc for thread-safe sharing.
     inner: Arc<(AtomicBool, Notify)>,
 }
 

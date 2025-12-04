@@ -1,3 +1,8 @@
+//! Workflow node definitions and execution types.
+//!
+//! Nodes are the building blocks of a workflow, each representing an action
+//! to be executed (e.g., HTTP request, code execution, conditional branching).
+
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -8,42 +13,58 @@ use crate::{
     workflow::actions::{Action, ActionOutput, ActionType, AgentAction, CodeAction, EndAction, HttpRequestAction, IfElseAction, StartAction},
 };
 
-/// node id
+/// Unique identifier for a node within a workflow.
 pub type NodeId = String;
 
 /// State of a node or edge during workflow execution.
+///
+/// Tracks the lifecycle of nodes and edges through the execution process.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq, strum::AsRefStr, strum::EnumString)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum NodeState {
+    /// Initial state - not yet processed.
     #[default]
     Unknown,
+    /// Node has been picked up for execution.
     Taken,
+    /// Node has completed execution.
     Executed,
+    /// Node was skipped (e.g., due to conditional branching).
     Skipped,
 }
 
-/// Status of a node or edge during workflow execution.
+/// Execution status indicating the result of a node's action.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq, strum::AsRefStr, strum::EnumString)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum NodeExecutionStatus {
+    /// Action has not yet executed.
     #[default]
     Pending,
+    /// Action completed successfully.
     Succeeded,
+    /// Action failed with an error.
     Failed,
+    /// Action encountered an unexpected exception.
     Exception,
+    /// Action was stopped (e.g., due to shutdown).
     Stopped,
+    /// Action is paused (for future use).
     Paused,
 }
 
+/// Error handling strategy for node failures.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq, strum::AsRefStr, strum::EnumString)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum ErrorStrategy {
+    /// No special handling - propagate error.
     #[default]
     None,
+    /// Use a default value on error.
     DefaultValue,
+    /// Take the fail branch on error.
     FaileBranch,
 }
 

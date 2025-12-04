@@ -1,8 +1,31 @@
+//! Variable container for storing and manipulating JSON-like data.
+//!
+//! `Vars` is a thin wrapper around `serde_json::Map` that provides
+//! a convenient API for storing action inputs and outputs.
+
 use std::ops::{Deref, DerefMut};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
+/// A container for storing key-value pairs with JSON values.
+///
+/// `Vars` is used throughout Actflow to pass data between nodes:
+/// - Environment variables
+/// - Node inputs and outputs
+/// - Template variable resolution
+///
+/// # Example
+///
+/// ```rust
+/// use actflow::common::Vars;
+///
+/// let mut vars = Vars::new();
+/// vars.set("name", "John");
+/// vars.set("age", 30);
+///
+/// let name: String = vars.get("name").unwrap();
+/// ```
 #[derive(Default, Clone)]
 pub struct Vars {
     inner: Map<String, Value>,

@@ -1,5 +1,18 @@
+//! In-memory cache for storing key-value pairs.
+//!
+//! Uses moka's high-performance concurrent cache implementation.
+
 use moka::sync::Cache;
 
+/// Thread-safe in-memory cache with configurable capacity.
+///
+/// Used for storing:
+/// - Environment variables (`MemCache<String, String>`)
+/// - Node outputs (`MemCache<NodeId, Vars>`)
+///
+/// The cache is backed by moka, which provides:
+/// - Thread-safe concurrent access
+/// - LRU eviction when capacity is exceeded
 #[derive(Clone)]
 pub struct MemCache<K, V> {
     variables: Cache<K, V>,
@@ -31,7 +44,6 @@ where
         &self,
         key: &K,
     ) -> Option<V> {
-        // moka::sync::Cache::get 返回克隆后的值
         self.variables.get(key)
     }
 

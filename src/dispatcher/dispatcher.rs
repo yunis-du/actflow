@@ -1,3 +1,11 @@
+//! Workflow dispatcher for scheduling and executing nodes.
+//!
+//! The dispatcher is responsible for:
+//! - Traversing the workflow graph
+//! - Scheduling nodes for execution when dependencies are met
+//! - Handling node results and determining next steps
+//! - Managing retries and timeouts
+
 use std::{sync::Arc, time::Duration};
 
 use tokio::{runtime::Runtime, sync::mpsc};
@@ -16,17 +24,28 @@ use crate::{
     },
 };
 
+/// Workflow execution dispatcher.
+///
+/// The dispatcher manages the execution of a workflow by:
+/// - Processing commands (Start, Abort)
+/// - Spawning node execution tasks
+/// - Handling node completion and scheduling successors
+/// - Managing conditional branching (if_else nodes)
 pub struct Dispatcher {
+    /// Execution context with environment and outputs.
     ctx: Arc<Context>,
+    /// The workflow graph to execute.
     workflow: Arc<Workflow>,
-
+    /// Queue for receiving workflow commands.
     command_queue: Arc<Queue<WorkflowCommand>>,
-
+    /// Tokio runtime for spawning tasks.
     runtime: Arc<Runtime>,
+    /// Shutdown coordinator.
     shutdown: Arc<Shutdown>,
 }
 
 impl Dispatcher {
+    /// Creates a new dispatcher for the given workflow.
     pub fn new(
         ctx: Arc<Context>,
         workflow: Arc<Workflow>,
@@ -42,6 +61,11 @@ impl Dispatcher {
         }
     }
 
+    /// Starts the dispatcher's main event loop.
+    ///
+    /// The loop processes:
+    /// - Workflow commands (Start, Abort)
+    /// - Node execution results
     pub fn start(&self) {
         // Internal channel for worker task completion events
         let (tx, mut rx) = mpsc::channel::<(NodeId, NodeEvent)>(1024);
@@ -125,10 +149,12 @@ impl Dispatcher {
         });
     }
 
+    /// Stops the dispatcher.
     pub fn stop(&self) {
         self.shutdown.shutdown();
     }
 
+    /// Returns all node outputs collected during execution.
     pub fn outputs(&self) -> Vars {
         let mut result = Vars::new();
         for (nid, vars) in self.ctx.outputs().iter() {
@@ -137,10 +163,12 @@ impl Dispatcher {
         result
     }
 
+    /// Checks if the dispatcher has completed execution.
     pub fn is_complete(&self) -> bool {
         self.shutdown.is_terminated()
     }
 
+    /// Spawns a node for execution in a separate task.
     fn spawn_node(
         ctx: &Arc<Context>,
         workflow: &Arc<Workflow>,

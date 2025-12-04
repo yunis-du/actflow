@@ -1,3 +1,9 @@
+//! Runtime workflow representation using a directed graph.
+//!
+//! This module provides the internal workflow representation used during execution.
+//! It wraps the workflow model in a directed graph structure (using petgraph) for
+//! efficient traversal and state management.
+
 use std::collections::HashMap;
 
 use petgraph::{
@@ -15,8 +21,20 @@ use crate::{
     },
 };
 
+/// Runtime workflow representation as a directed graph.
+///
+/// The workflow graph maintains:
+/// - Nodes representing actions to execute
+/// - Edges representing transitions between nodes
+/// - Execution state for each node and edge
+///
+/// The graph structure enables efficient:
+/// - Dependency resolution (which nodes are ready to execute)
+/// - Parallel execution (multiple branches can execute concurrently)
+/// - Conditional branching (if_else nodes with true/false paths)
 #[derive(Clone)]
 pub struct Workflow {
+    /// Thread-safe directed graph storing nodes and edges.
     graph: ShareLock<DiGraph<Node, Edge>>,
 }
 

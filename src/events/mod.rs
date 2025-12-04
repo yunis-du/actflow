@@ -1,3 +1,8 @@
+//! Event types for workflow execution.
+//!
+//! Events are emitted during workflow execution to notify subscribers
+//! about state changes, completions, errors, and logs.
+
 mod node;
 mod workflow;
 
@@ -6,31 +11,40 @@ pub use workflow::*;
 
 use crate::{runtime::ProcessId, workflow::node::NodeId};
 
+/// Generic event wrapper.
 #[derive(Debug, Clone)]
 pub struct Event<T> {
     inner: T,
 }
 
+/// Top-level event type for workflow graph events.
 #[derive(Debug, Clone)]
 pub enum GraphEvent {
+    /// Workflow-level events (start, complete, failed, etc.).
     Workflow(WorkflowEvent),
+    /// Node-level events (running, succeeded, error, etc.).
     Node(NodeEvent),
 }
 
+/// Event message containing process and node context.
 #[derive(Debug, Clone)]
 pub struct Message {
-    /// process id
+    /// Process ID that generated this event.
     pub pid: ProcessId,
-    /// node id
+    /// Node ID that generated this event (empty for workflow events).
     pub nid: NodeId,
-    /// event
+    /// The actual event data.
     pub event: GraphEvent,
 }
 
+/// Log entry emitted during node execution.
 #[derive(Debug, Clone)]
 pub struct Log {
+    /// Process ID that generated this log.
     pub pid: ProcessId,
+    /// Node ID that generated this log.
     pub nid: NodeId,
+    /// Log message content.
     pub content: String,
     /// Timestamp in milliseconds of the log entry.
     pub timestamp: i64,
