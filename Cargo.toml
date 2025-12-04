@@ -18,6 +18,8 @@ jsonschema = { version = "0.37", default-features = false }
 moka = { version = "0.12.11", features = ["sync"] }
 nanoid = "0.4.0"
 petgraph = "0.8.3"
+prost = "0.14"
+prost-types = "0.14"
 regex = "1.12.2"
 reqwest = { version = "0.12.24", features = ["blocking", "json"] }
 rquickjs = "0.10"
@@ -30,7 +32,13 @@ sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio"] }
 strum = { version = "0.27.2", features = ["derive"] }
 thiserror = "2.0.17"
 tokio = { version = "1.48.0", features = ["full"] }
+tokio-stream = "0.1"
 toml = "0.9.8"
+tonic = "0.14"
+tonic-prost = "0.14"
 tracing = "0.1.41"
 typetag = "0.2.21"
 uuid = { version = "1.19", features = ["v4"] }
+
+[build-dependencies]
+tonic-prost-build = "0.14"

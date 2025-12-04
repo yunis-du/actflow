@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ActflowError, Result,
     common::Vars,
-    workflow::actions::{Action, ActionOutput, ActionType, HttpRequestAction, IfElseAction, StartAction, code::CodeAction},
+    workflow::actions::{Action, ActionOutput, ActionType, AgentAction, HttpRequestAction, IfElseAction, StartAction, code::CodeAction},
 };
 
 /// node id
@@ -139,6 +139,7 @@ impl Node {
         action_params: serde_json::Value,
     ) -> Result<Box<dyn Action>> {
         match uses {
+            ActionType::Agent => Ok(Box::new(AgentAction::create(action_params)?)),
             ActionType::Code => Ok(Box::new(CodeAction::create(action_params)?)),
             ActionType::HttpRequest => Ok(Box::new(HttpRequestAction::create(action_params)?)),
             ActionType::IfElse => Ok(Box::new(IfElseAction::create(action_params)?)),

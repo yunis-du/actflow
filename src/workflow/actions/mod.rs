@@ -1,3 +1,4 @@
+pub mod agent;
 pub mod code;
 pub mod http_request;
 pub mod if_else;
@@ -15,6 +16,7 @@ use crate::{
     workflow::node::{NodeExecutionStatus, NodeId},
 };
 
+pub use agent::AgentAction;
 pub use http_request::HttpRequestAction;
 pub use if_else::IfElseAction;
 pub use start::StartAction;
@@ -25,6 +27,7 @@ pub use start::StartAction;
 pub enum ActionType {
     #[default]
     None,
+    Agent,
     Code,
     HttpRequest,
     IfElse,
