@@ -1,8 +1,9 @@
-pub mod agent;
-pub mod code;
-pub mod http_request;
-pub mod if_else;
-pub mod start;
+mod agent;
+mod code;
+mod end;
+mod http_request;
+mod if_else;
+mod start;
 
 use std::sync::Arc;
 
@@ -17,6 +18,8 @@ use crate::{
 };
 
 pub use agent::AgentAction;
+pub use code::CodeAction;
+pub use end::EndAction;
 pub use http_request::HttpRequestAction;
 pub use if_else::IfElseAction;
 pub use start::StartAction;
@@ -29,6 +32,7 @@ pub enum ActionType {
     None,
     Agent,
     Code,
+    End,
     HttpRequest,
     IfElse,
     Start,
