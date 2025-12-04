@@ -1,6 +1,8 @@
 syntax = "proto3";
 package agent;
 
+option go_package = "github.com/yunis-du/actflow-agent-sdk/go-sdk/pb";
+
 import "google/protobuf/struct.proto";
 
 // Agent service.

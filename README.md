@@ -15,9 +15,11 @@ Actflow is a lightweight, event-driven workflow engine written in Rust. It is de
 | Action | Description |
 |--------|-------------|
 | `start` | Entry point of the workflow |
+| `end` | End point of the workflow |
 | `http_request` | HTTP request with support for GET/POST/PUT/DELETE, authentication (Bearer/Basic/Custom), headers, params, and body |
 | `if_else` | Conditional branching based on variable comparisons (equals, not_equals, contains, greater_than, etc.) |
 | `code` | Execute JavaScript or Python code with variable inputs and JSON outputs |
+| `agent` | Call remote agent service via gRPC with streaming support for logs and outputs |
 
 ## Template Variables
 
