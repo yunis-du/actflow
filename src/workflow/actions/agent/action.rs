@@ -35,14 +35,14 @@ impl AgentAction {
         // Collect environment variables
         let env: HashMap<String, String> = ctx.env().iter().map(|(k, v)| (k.to_string(), v)).collect();
 
-        // Collect all node outputs as variables
-        let vars: HashMap<String, prost_types::Value> =
+        // Collect all node outputs as outputs
+        let outputs: HashMap<String, prost_types::Value> =
             ctx.outputs().iter().map(|(nid, outputs)| (nid.to_string(), json_to_prost_value(&serde_json::Value::from(outputs)))).collect();
 
         pb::Context {
             pid: ctx.pid(),
             env,
-            vars,
+            outputs,
         }
     }
 
