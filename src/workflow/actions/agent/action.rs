@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -15,6 +12,7 @@ use crate::{
     workflow::{
         actions::{Action, ActionOutput, ActionType},
         node::{NodeExecutionStatus, NodeId},
+        template,
     },
 };
 
@@ -30,22 +28,6 @@ pub struct AgentAction {
 }
 
 impl AgentAction {
-    /// Build gRPC context from workflow context
-    fn build_grpc_context(ctx: &Context) -> pb::Context {
-        // Collect environment variables
-        let env: HashMap<String, String> = ctx.env().iter().map(|(k, v)| (k.to_string(), v)).collect();
-
-        // Collect all node outputs as outputs
-        let outputs: HashMap<String, prost_types::Value> =
-            ctx.outputs().iter().map(|(nid, outputs)| (nid.to_string(), json_to_prost_value(&serde_json::Value::from(outputs)))).collect();
-
-        pb::Context {
-            pid: ctx.pid(),
-            env,
-            outputs,
-        }
-    }
-
     /// Map proto NodeExecutionStatus to workflow NodeExecutionStatus
     fn map_status(status: pb::NodeExecutionStatus) -> NodeExecutionStatus {
         match status {
@@ -103,11 +85,14 @@ impl Action for AgentAction {
 
         let mut client = AgentServiceClient::new(channel);
 
+        // Resolve template variables in inputs
+        let resolved_inputs = template::resolve_json_value(&ctx, &self.inputs)?;
+
         // Build the request
         let request = pb::RunRequest {
+            pid: ctx.pid(),
             nid: nid.clone(),
-            ctx: Some(Self::build_grpc_context(&ctx)),
-            inputs: Some(json_to_prost_value(&self.inputs)),
+            inputs: Some(json_to_prost_value(&resolved_inputs)),
         };
 
         // Call the agent service (streaming response)
