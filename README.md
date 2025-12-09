@@ -32,6 +32,14 @@ Actflow supports template variables to reference outputs from other nodes:
 
 Example: `{{#n1.body.data.user.name#}}` references the `name` field from node `n1`'s output.
 
+You can also reference environment variables from the `Context`:
+
+```
+{{$VAR_NAME$}}
+```
+
+Example: `{{$API_KEY$}}` references the `API_KEY` environment variable.
+
 ## Quick Start
 
 Here is a simple example of how to define and run a workflow:
