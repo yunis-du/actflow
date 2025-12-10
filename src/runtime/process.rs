@@ -8,13 +8,12 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 use crate::{
-    ActflowError, Result,
+    Result,
     common::{Queue, Vars},
     dispatcher::Dispatcher,
     events::{GraphEvent, WorkflowEvent},
     model::WorkflowModel,
     runtime::{Channel, ChannelOptions, Context, channel::ChannelEvent},
-    store::Store,
     utils,
     workflow::Workflow,
 };
@@ -66,7 +65,6 @@ impl Process {
     /// # Arguments
     ///
     /// * `model` - Workflow definition to execute
-    /// * `store` - Storage backend for persistence
     /// * `channel` - Event channel for broadcasting events
     /// * `runtime` - Tokio runtime for async execution
     ///
@@ -75,18 +73,10 @@ impl Process {
     /// Returns an `Arc<Process>` on success, or an error if creation fails.
     pub fn new(
         model: &WorkflowModel,
-        store: Arc<Store>,
         channel: Arc<Channel>,
         runtime: Arc<Runtime>,
     ) -> Result<Arc<Process>> {
         let pid = utils::longid();
-
-        let proc = store.procs().find(&pid);
-        if proc.is_ok() {
-            return Err(ActflowError::Process(format!(
-                "proc_id({pid}) is duplicated in running process list"
-            )));
-        }
 
         let workflow = Workflow::try_from(model)?;
 

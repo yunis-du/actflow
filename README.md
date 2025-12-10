@@ -51,13 +51,13 @@ use actflow::{ChannelEvent, ChannelOptions, EdgeModel, EngineBuilder, NodeModel,
 use serde_json::json;
 
 fn main() {
-    // 1. Initialize Engine
+    // 1. Build engine
     let engine = EngineBuilder::new().build().unwrap();
 
-    // 2. Launch the engine
+    // 2. Launch engine
     engine.launch();
 
-    // 3. Define a Workflow
+    // 3. Define workflow model
     let workflow = WorkflowModel {
         id: "hello_world".to_string(),
         name: "hello_world".to_string(),
@@ -101,13 +101,10 @@ fn main() {
         }],
     };
 
-    // 4. Deploy Workflow
-    engine.deploy(&workflow).unwrap();
+    // 4. Create workflow process
+    let process = engine.build_workflow_process(&workflow).unwrap();
 
-    // 5. Build Process
-    let process = engine.build_process(&workflow.id).unwrap();
-
-    // 6. Listen to events
+    // 5. Listen to events
     ChannelEvent::channel(engine.channel(), ChannelOptions::with_pid(process.id().to_string())).on_complete(move |pid| {
         println!("Workflow completed, pid: {}", pid);
     });
@@ -124,9 +121,9 @@ fn main() {
         println!("Event: {:?}", e);
     });
 
-    // 7. Run Workflow
-    let pid = engine.run_process(process.clone()).unwrap();
-    println!("Started process: {}", pid);
+    // 6. Run workflow process
+    process.start();
+    println!("Started process: {}", process.id());
 
     loop {
         if process.is_complete() {
@@ -150,7 +147,6 @@ Actflow consists of several core components:
 - **Channel**: An internal event bus that broadcasts events (Workflow, Node, Log) to subscribers.
 - **Process**: An instance of a running workflow. It maintains the execution context and state.
 - **Dispatcher**: Responsible for scheduling node execution based on the workflow graph and current state.
-- **Store**: Abstracted storage layer (Memory/Postgres) for persisting workflows, process states, and execution history.
 
 ## Configuration
 
@@ -158,10 +154,4 @@ You can configure Actflow using the `Config` struct or a TOML file.
 
 ```toml
 async_worker_thread_number = 16
-
-[store]
-store_type = "postgres"
-
-[store.postgres]
-database_url = "postgres://user:pass@localhost:5432/actflow"
 ```
