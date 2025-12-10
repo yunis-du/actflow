@@ -6,9 +6,7 @@ Actflow is a lightweight, event-driven workflow engine written in Rust. It is de
 
 - **Event-Driven Architecture**: Built on top of a robust event bus, ensuring high decoupling and scalability.
 - **Async Execution**: Powered by `tokio`, supporting high-concurrency workflow execution.
-- **Pluggable Storage**: Supports in-memory storage for testing and PostgreSQL for production persistence.
 - **Flexible Workflow Definition**: Define workflows using JSON, supporting various node types and control flows.
-- **Automatic Process Management**: Automatically manages the lifecycle of processes, including execution, suspension, and cleanup.
 
 ## Supported Actions
 

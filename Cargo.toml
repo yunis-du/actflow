@@ -11,7 +11,7 @@ edition = "2024"
 async-trait = "0.1.89"
 base64 = "0.22.1"
 chrono = "0.4"
-flume = "0.11.1"
+flume = "0.12"
 futures = "0.3.31"
 globset = { version = "0.4.18", default-features = false }
 jsonschema = { version = "0.37", default-features = false }
@@ -21,7 +21,7 @@ petgraph = "0.8.3"
 prost = "0.14"
 prost-types = "0.14"
 regex = "1.12.2"
-reqwest = { version = "0.12.24", features = ["blocking", "json"] }
+reqwest = { version = "0.12", features = ["blocking", "json"] }
 rquickjs = "0.10"
 rustpython-vm = "0.4"
 serde = { version = "1.0.228", features = ["derive"] }
