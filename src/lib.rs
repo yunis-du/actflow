@@ -27,7 +27,6 @@
 
 mod builder;
 mod common;
-mod config;
 mod dispatcher;
 mod engine;
 mod error;
@@ -40,7 +39,6 @@ mod workflow;
 use std::sync::{Arc, RwLock};
 
 pub use builder::EngineBuilder;
-pub use config::*;
 pub use engine::Engine;
 pub use error::ActflowError;
 pub use model::*;

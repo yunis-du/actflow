@@ -1,56 +1,51 @@
-use std::path::Path;
+use std::sync::Arc;
 
-use crate::{Config, Engine, Result};
+use tokio::runtime::{Builder, Runtime};
+
+use crate::{Engine, Result};
 
 pub struct EngineBuilder {
-    config: Config,
+    async_worker_thread_number: u16,
+    rt: Option<Arc<Runtime>>,
 }
 
 impl Default for EngineBuilder {
     fn default() -> Self {
-        Self::new()
+        Self {
+            async_worker_thread_number: 16,
+            rt: None,
+        }
     }
 }
 
 impl EngineBuilder {
     pub fn new() -> Self {
-        let mut config = Config::default();
-        let file = Path::new("config/actflow.toml");
-
-        if file.exists() {
-            config = Config::create(file);
-        } else {
-            if let Ok(env_config_path) = std::env::var("ACTFLOW_CONFIG") {
-                let env_file = Path::new(&env_config_path);
-                if env_file.exists() {
-                    config = Config::create(env_file);
-                }
-            }
-        }
-
-        Self {
-            config,
-        }
+        Self::default()
     }
 
-    pub fn set_config_source<T: AsRef<Path>>(
+    pub fn async_worker_thread_number(
         mut self,
-        source: T,
+        n: u16,
     ) -> Self {
-        self.config = Config::create(source);
+        self.async_worker_thread_number = n;
         self
     }
 
-    pub fn config(
+    pub fn runtime(
         mut self,
-        config: Config,
+        runtime: Arc<Runtime>,
     ) -> Self {
-        self.config = config;
+        self.rt = Some(runtime);
         self
     }
 
     pub fn build(&self) -> Result<Engine> {
-        let engine = Engine::new_with_config(self.config.clone());
+        let runtime = if self.rt.is_some() {
+            self.rt.as_ref().unwrap().clone()
+        } else {
+            Arc::new(Builder::new_multi_thread().worker_threads(self.async_worker_thread_number.into()).enable_all().build().unwrap())
+        };
+        let engine = Engine::new(runtime);
 
         Ok(engine)
     }

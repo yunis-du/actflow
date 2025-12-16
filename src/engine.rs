@@ -9,10 +9,10 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-use tokio::runtime::{Builder, Runtime};
+use tokio::runtime::Runtime;
 
 use crate::{
-    ActflowError, ChannelEvent, ChannelOptions, Config, Result,
+    ActflowError, ChannelEvent, ChannelOptions, Result,
     common::{MemCache, Queue, Shutdown},
     model::WorkflowModel,
     runtime::{Channel, Process, ProcessId},
@@ -46,13 +46,7 @@ pub struct Engine {
 
 impl Engine {
     /// Creates a new engine.
-    ///
-    /// This initializes:
-    /// - The tokio runtime with configured worker threads
-    /// - The event channel
-    pub fn new_with_config(config: Config) -> Self {
-        let runtime = Arc::new(Builder::new_multi_thread().worker_threads(config.async_worker_thread_number.into()).enable_all().build().unwrap());
-
+    pub fn new(runtime: Arc<Runtime>) -> Self {
         let channel = Arc::new(Channel::new(runtime.clone()));
 
         let procs_complete_queue = Queue::new(PROCESS_COMPLETE_QUEUE_SIZE);
