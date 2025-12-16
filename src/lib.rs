@@ -41,6 +41,7 @@ use std::sync::{Arc, RwLock};
 pub use builder::EngineBuilder;
 pub use engine::Engine;
 pub use error::ActflowError;
+pub use events::*;
 pub use model::*;
 pub use runtime::{ChannelEvent, ChannelOptions};
 
