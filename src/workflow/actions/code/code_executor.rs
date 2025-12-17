@@ -86,7 +86,10 @@ impl PythonExecutor {
         // Auto-detect function name from code
         let func_name = Self::extract_python_function_name(code).ok_or_else(|| ActflowError::Runtime("No function found in Python code".to_string()))?;
 
-        Interpreter::without_stdlib(Default::default()).enter(|vm| {
+        let mut settings = rustpython_vm::Settings::default();
+        settings.install_signal_handlers = false;
+
+        Interpreter::without_stdlib(settings).enter(|vm| {
             let scope = vm.new_scope_with_builtins();
 
             // Execute the user code to define the function
